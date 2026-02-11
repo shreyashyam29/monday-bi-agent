@@ -1,19 +1,19 @@
 import requests
 import os
-import streamlit as st
-from dotenv import load_dotenv
 
-load_dotenv()
-
-# Try Streamlit secrets first (for cloud), then fall back to env vars (for local)
+# Load secrets - Streamlit Cloud uses st.secrets
 try:
+    import streamlit as st
     API_URL = st.secrets.get("LLM_API_URL", "https://api.groq.com/openai/v1/chat/completions")
-    API_KEY = st.secrets["LLM_API_KEY"]
-    MODEL_NAME = st.secrets.get("LLM_MODEL", "llama3-8b-8192")
-except:
+    API_KEY = st.secrets.get("LLM_API_KEY")
+    MODEL_NAME = st.secrets.get("LLM_MODEL", "llama-3.1-8b-instant")
+except Exception:
+    # Fallback to environment variables for local development
+    from dotenv import load_dotenv
+    load_dotenv()
     API_URL = os.getenv("LLM_API_URL", "https://api.groq.com/openai/v1/chat/completions")
     API_KEY = os.getenv("LLM_API_KEY")
-    MODEL_NAME = os.getenv("LLM_MODEL", "llama3-8b-8192")
+    MODEL_NAME = os.getenv("LLM_MODEL", "llama-3.1-8b-instant")
 
 
 def call_llm(prompt):
@@ -38,8 +38,6 @@ def call_llm(prompt):
         response.raise_for_status()
         return response.json()["choices"][0]["message"]["content"]
     except requests.exceptions.HTTPError as e:
-        # Print the actual error from the API
         error_detail = response.json() if response.text else "No error details"
         print(f"API Error: {error_detail}")
         raise Exception(f"Groq API Error: {error_detail}")
-
